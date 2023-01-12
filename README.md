@@ -1,3 +1,20 @@
+# Title of paper
+
+This repository contains auxiliary material for the paper ["Title of paper"](link to paper) which was accepted to [name of conference](link to conference).
+
+# Overview
+
+This repository contains the following:
+
+- `gen_attacktraces` contains the ...
+- `gen_reftraces` contains the ...
+- `prepared_attacktraces` contains the ...
+- `prepared_reftraces` contains the ...
+- `DPA_Recon.py` ...
+- `SCA_DPA_with256ref.py` ...
+
+# Practical Evaluation
+
 # Single Trace Attack on UOV
 This repository allows to run a single trace attack on UOV using the ChipWhisperer Setup with an STM32F3 Target Board. For the attack to be successful, we need 256 reference traces (possibly from a profiling device) and one attack trace (from the target device). The attached folders allow you to either generate the traces by yourself or to work this those we provide, in case you do not have the CW Setup at hand or just want to execute the attack quickly. Please consider the following folders
 
@@ -17,6 +34,11 @@ The script 'DPA_recon.py' contains the attack.
 
 - if you already have collected some traces on your own and want to try the attack on them, run 'python DPA_recon.py 1'
 
+# Licenses
 
+Code in this repository that does not indicate otherwise is placed in the public domain.
 
+For the third party code see their licenses:
 
+- [UOV](https://github.com/pqov/pqov-paper): [https://github.com/pqov/pqov-paper](https://github.com/pqov/pqov-paper)
+- [ChipWhisperer](https://github.com/newaetech/chipwhisperer): [https://github.com/newaetech/chipwhisperer/blob/develop/LICENSE.txt](https://github.com/newaetech/chipwhisperer/blob/develop/LICENSE.txt)
