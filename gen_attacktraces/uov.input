@@ -1,0 +1,22 @@
+#ifndef _UOV_H_
+#define _UOV_H_
+
+#define _GFSIZE 256
+#define _V1 42
+#define _O1 28
+#define _O2 0
+#define _HASH_LEN 32
+
+// #define _GFSIZE 256
+// #define _V1 68
+// #define _O1 44
+// #define _O2 0
+// #define _HASH_LEN 32
+
+#define _O1_BYTE (_O1)
+
+    <INPUT>
+
+uint32_t trigger;
+
+#endif // _UOV_H_
