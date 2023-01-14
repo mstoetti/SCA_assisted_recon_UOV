@@ -1,6 +1,7 @@
-# Title of paper
+# Separating Oil and Vinegar with a Single Trace
 
-This repository contains auxiliary material for the paper ["Title of paper"](link to paper) which was accepted to [name of conference](link to conference).
+This repository contains auxiliary material for the paper: **"Separating Oil and Vinegar with a Single Trace : 
+Side-Channel Assisted Reconciliation Attack on UOV"**.
 
 # Overview
 
