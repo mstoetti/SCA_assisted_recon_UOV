@@ -40,7 +40,7 @@ BIN = "/uov-" + PLATFORM + ".hex"
 def main(argv):
     if(len(argv) != 3):
         print(
-            "\nplease specify the full path and the platform/simulation\npython UOV_SPA_check.py [path] [CWLITEARM|CW308_STM32F4|SIM] [LOOPS]\ne.g. python SPA_check.py /home/me/chipwhisperer/UOV_SPA_check/ CWLITEARM 100\n")
+            "\nplease specify the full path, the platform/simulation and the number of traces\npython gen_attacktraces.py [path] [CWLITEARM|CW308_STM32F4|SIM] [#TRACES]\ne.g. python gen_attacktraces.py /home/me/chipwhisperer/gen_attacktraces/ CWLITEARM 100\n")
         sys.exit()
     else:
         PATH = argv[0]
@@ -177,28 +177,9 @@ def main(argv):
             mean = mean / (_O1//4)
             meanTraces.append(mean)
 
-        # get calculated y 
-        # y = target.read()
-        # print(len(y))
-        # for index in range(0, len(y)):
-        #     print(hex(ord(y[index])))
-
-        # y = target.read()
-        # print(len(y))
-        # for index in range(0, len(y)):
-        #     print(hex(ord(y[index])))    
-
         meanTraces = np.array(meanTraces).T
-        # tempTraces = np.array(tempTraces).T
-        # tempPath = "tempTraces_" + str(j) + ".csv"
         meanPath = "meanTraces_" + str(j) + ".csv"
-        # np.savetxt(path, trace, delimiter=",")
-        np.savetxt(meanPath, meanTraces, delimiter=',', comments="")
-        #np.savetxt(tempPath, tempTraces, delimiter=',', comments="")
-        # plt.plot(trace, color='black', label='real trace')
-        # plt.savefig("plt" + str(i) + ".png")
-        # plt.savefig("plt" + str(i) + ".eps", format='eps', dpi=1000)
-        # plt.show()    
+        np.savetxt(meanPath, meanTraces, delimiter=',', comments="") 
         
     scope.dis()
     target.dis()

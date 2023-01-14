@@ -40,7 +40,7 @@ BIN = "/uov-" + PLATFORM + ".hex"
 def main(argv):
     if(len(argv) != 2):
         print(
-            "\nplease specify the full path and the platform/simulation\npython UOV.py [path] [CWLITEARM|CW308_STM32F4|SIM]\ne.g. python UOV.py /home/me/chipwhisperer/UOV/ CWLITEARM\n")
+            "\nplease specify the full path and the platform\npython gen_ref_traces.py [path] [CWLITEARM|CW308_STM32F4]\ne.g. python gen_reftraces.py /home/me/chipwhisperer/gen_reftraces/ CWLITEARM\n")
         sys.exit()
     else:
         PATH = argv[0]
@@ -141,7 +141,6 @@ def main(argv):
 
         print(refvin)
 
-        #filedata = filedata.replace('<INPUT>', str(result.decode('utf8')))
         filedata = filedata.replace('<INPUT>', str(refvin))
 
         # Write the file out again
