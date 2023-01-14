@@ -1,4 +1,4 @@
-# script and code for trace capture@chipwhisperer
+# Script and code for generating reference traces@chipwhisperer
 
 - install the chipwhisperer framework (and make sure that `arm-none-eabi-gcc` is available)
 - link or copy this project to `<chipwhisperer_path>/hardware/victims/firmware/`
