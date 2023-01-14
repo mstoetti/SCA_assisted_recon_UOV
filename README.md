@@ -9,7 +9,7 @@ This repository allows to run a single trace attack on UOV using the ChipWhisper
 - **gen_attacktraces**: Generate your own attack traces. You need the CW Setup with an STM32F3 board.
 - **gen_reftraces**: Generate your own reference traces. You need the CW Setup with an STM32F3 board. Note, that this takes around 8 hours to complete.
 - **prepared_attacktraces**: Contains 100 attack traces along with the corresponding signatures.
-- **prepared_reftraces**: Contains 256 reference traces a random trace file.
+- **prepared_reftraces**: Contains 256 reference traces and a random trace file.
 
 
 ## Demonstration of the Attack
@@ -21,7 +21,7 @@ The script **DPA_recon.py** contains the attack.
 
 - run `python DPA_recon.py 1 [NUM_OF_TRACES]`, if you already have collected reference traces in **gen_reftraces** and attack traces in **gen_attacktraces** on your own and want to try the attack on them. After recovering the oil vector(s) from the traces, the script will ask to select which 1 or 2 of the recovered oil vector(s) should be used for the reconciliation step.
 
-The script **simulate_noisy_HW_measure.py** ...
+The script **simulate_noisy_HW_measure.py** contains a simulated attack, that recoveres the vinegar variables from the Hamming weights of certain products in the signing process. The noise level of the simulated Hamming weight measurements can be adjusted.
 
 # Licenses
 
