@@ -3,9 +3,7 @@
 This repository contains auxiliary material for the paper: **"Separating Oil and Vinegar with a Single Trace : 
 Side-Channel Assisted Reconciliation Attack on UOV"**.
 
-# Practical Evaluation
-
-# Single Trace Attack on UOV
+## Overview
 This repository allows to run a single trace attack on UOV using the ChipWhisperer Setup with an STM32F3 Target Board. For the attack to be successful, we need 256 reference traces (possibly from a profiling device) and one attack trace (from the target device). The attached folders allow you to either generate the traces by yourself or to work this those we provide, in case you do not have the CW Setup at hand or just want to execute the attack quickly. Please consider the following folders:
 
 - `gen_attacktraces`: Generate your own attack traces. You need the CW Setup with an STM32F3 board.
@@ -14,7 +12,7 @@ This repository allows to run a single trace attack on UOV using the ChipWhisper
 - `prepared_reftraces`: Contains 256 reference traces a random trace file.
 
 
-# Demonstration of the Attack
+## Demonstration of the Attack
 For a detailed description of the attack, please read the paper.
 
 The script 'DPA_recon.py' contains the attack.
