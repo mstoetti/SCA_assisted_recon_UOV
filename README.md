@@ -15,12 +15,11 @@ This repository allows to run a single trace attack on UOV using the ChipWhisper
 ## Demonstration of the Attack
 For a detailed description of the attack, please read the paper.
 
-The script 'DPA_recon.py' contains the attack.
+The script `DPA_recon.py` contains the attack.
 
-- run `python DPA_recon.py 0' to run the attack with the provided 100 attack traces and 256 reference traces
-    for each of the 100 attack traces, the script will either output the secret key (the secret oil space) corresponding to the public key of the attack trace or a message that the attack trace was not 
+- run `python DPA_recon.py 0 100` to run the attack with the provided 100 attack traces and 256 reference traces. After recovering the oil vector(s) from the traces, the script will ask to select which 1 or 2 of the recovered oil vector(s) should be used for the reconciliation step.
 
-- if you already have collected some traces on your own and want to try the attack on them, run 'python DPA_recon.py 1'
+- run `python DPA_recon.py 1 [NUM_OF_TRACES]`, if you already have collected reference traces in `gen_reftraces` and [NUM_OF_TRACES] attack traces in `gen_attacktraces` on your own and want to try the attack on them. After recovering the oil vector(s) from the traces, the script will ask to select which 1 or 2 of the recovered oil vector(s) should be used for the reconciliation step.
 
 # Licenses
 
