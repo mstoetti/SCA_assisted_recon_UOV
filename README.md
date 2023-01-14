@@ -21,6 +21,8 @@ The script `DPA_recon.py` contains the attack.
 
 - run `python DPA_recon.py 1 [NUM_OF_TRACES]`, if you already have collected reference traces in `gen_reftraces` and [NUM_OF_TRACES] attack traces in `gen_attacktraces` on your own and want to try the attack on them. After recovering the oil vector(s) from the traces, the script will ask to select which 1 or 2 of the recovered oil vector(s) should be used for the reconciliation step.
 
+The script `simulate_noisy_HW_measure.py` ...
+
 # Licenses
 
 Code in this repository that does not indicate otherwise is placed in the public domain.
