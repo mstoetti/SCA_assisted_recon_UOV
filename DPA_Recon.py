@@ -5,6 +5,9 @@ import re
 from sage.all import *
 import random
 import sys
+import time
+from sage.doctest.util import Timer
+from sage.misc.sage_timeit import SageTimeitResult
 
 
 # PoI and Parameter for F3 traces
@@ -23,8 +26,14 @@ samp = 2000
 # field size q
 q = 256
 
+fixed=3*m-n
+
 x = var('x')
-K = GF(q, 'a', modulus= x**8 + x**4 + x**3 + x + 1, repr = 'int')
+# K = GF(q, 'a', modulus= x**8 + x**4 + x**3 + x + 1, repr = 'int')
+
+F = GF(2)['y']; (y,) = F._first_ngens(1)
+K = GF(q, 'z', modulus= y**8  + y**4 + y**3  + y + 1 , repr = 'int', proof=False, names=('z',)); (z,) = K._first_ngens(1)
+
 # R = PolynomialRing(K,'x', c*v, order='degrevlex'); 
 R = PolynomialRing(K,'x', v, order='degrevlex'); 
 x = R.gens()
@@ -37,6 +46,132 @@ nrc = 10
 
 PATH_ATTACK = ""
 PATH_REF = ""
+
+############################################
+##### Kipnis-Shamir attack
+
+def FindOilKipnisShamir(m, matrices_sym):
+    R = PolynomialRing(K,'x', n, order='degrevlex')
+    flag_found=True
+    trial=0 
+    while flag_found:
+        M0=matrices_sym[0 ]
+        M1=matrices_sym[1]
+        flag_inv=True
+        while flag_inv:
+            for j in range(1,m):
+                M0 += K.random_element()*matrices_sym[j]
+                M1 += K.random_element()*matrices_sym[j]
+            if M0.is_invertible():
+                flag_inv=False
+        M=M0.inverse()*M1
+        pol= M.charpoly()
+        P=pol.factor()
+        for i in range(len(P)-1,-1,-1):
+            P1=list(P)[i]
+            PP=P1[0 ]
+            PP_coef = list(PP) 
+            I=identity_matrix(K, n-m-fixed)
+            PP_M=PP_coef[0 ]*I
+            for ii in range(1,len(PP_coef)):
+                PP_M+=PP_coef[ii]*M**ii
+            PP_M_Ker=PP_M.right_kernel()
+            basis=PP_M_Ker.basis_matrix()
+            check=Eval(matrices,Matrix(R,1,n-m-fixed,[basis[0 ,i] for i in range(n-m-fixed)]),Matrix(R,1,n-m-fixed,[basis[0 ,i] for i in range(n-m-fixed)]))
+            flag1=0 
+            for i in range(m):
+                if check[i][0 ] == 0 :
+                    flag1+=1
+            if flag1 == m:
+                flag_found=False
+                oil1=var_change*Matrix(K,n-m-fixed,1,[basis[0 ,i] for i in range(n-m-fixed)])
+                break
+        trial+=1
+    return oil1.transpose()
+
+#############################################
+##### Prep for Kipnis-Shamir attack #################
+
+# find the linear relations
+def InitialLinSystemKS(a_full, PublicKeySymm, x, fixed):
+	R = PolynomialRing(K,'x', n, order='degrevlex')
+	systemM=[]
+	system=[x[n-m-i] for i in range(fixed,0,-1)] 
+ 	# linear equations
+	systemM = Eval(PublicKeySymm,Matrix(R,1,n,a_full[0]), Matrix(R,1,n,a_full[1]))
+	for j in range(len(systemM)):
+		system+=systemM[j][0]
+	Arev=LinearSystemToMatrixReversed(system,n,m+fixed)
+	Areduced=Arev.echelon_form()
+	xrev = x
+	xrev.reverse()
+	xrev_short = []
+	for jj in range(m+fixed):
+		xrev_short+=[xrev[jj]]
+	partial_sol=Areduced*Matrix(R,n,1,xrev)+Matrix(R,m+fixed,1,xrev_short)
+	x.reverse()
+	full_sol=[x[i] for i in range(n-m-fixed)]+[partial_sol[i,0] for i in range(m-1+fixed,-1,-1)]
+	return full_sol
+
+# find matrix form of linear system in reversed order
+def LinearSystemToMatrixReversed(system,n,m):
+    R = PolynomialRing(K,'x', n, order='degrevlex');
+    x = list(R.gens())
+    A=Matrix(K,m,n)
+    for i in range(len(system)):
+        temp=system[i]
+        coefs=temp.coefficients()
+        monoms=temp.monomials()
+        for j in range(n):
+            for l in range(len(monoms)):
+                if monoms[l] == x[j]:
+                    A[i,n-j-1]=coefs[l]
+    return A
+
+# find matrix form of linear system
+def LinearSystemToMatrix(system,n,m):
+    R = PolynomialRing(K,'x', n, order='degrevlex'); 
+    x = list(R.gens())	        
+    A=Matrix(K,m,n)
+    for i in range(len(system)):
+        temp=system[i]
+        coefs=temp.coefficients()
+        monoms=temp.monomials()
+        for j in range(n):
+            for l in range(len(monoms)):
+                if monoms[l] == x[j]:
+                    A[i,j]=coefs[l]
+    return A
+
+# form the system 
+def InitialSystemKS(a_full, PublicKey):
+	systemM=[]
+	system=[]
+	for j in range(0,len(a_full)):
+		systemM += Eval(PublicKey,Matrix(R,1,n,a_full[j]), Matrix(R,1,n,a_full[j]))
+	for j in range(len(systemM)):
+		system+=systemM[j][0]
+	return system
+
+# find coefficient matrices
+def PolynomialToMatrix(system,k):
+    R = PolynomialRing(K,'x', n, order='degrevlex')
+    x = list(R.gens())
+    system_matrices=[]
+    system_matrices_sym=[]
+    for i in range(len(system)):
+        M=Matrix(K,k,k)
+        temp=system[i]
+        coefs=temp.coefficients()
+        monoms=temp.monomials()
+        for j1 in range(k):
+            for j2 in range(j1,k):
+                for l in range(len(monoms)):
+                    if monoms[l] == x[j1]*x[j2]:
+                        M[j1,j2]=coefs[l]
+        system_matrices+=[M]
+        system_matrices_sym+=[M+M.transpose()]
+    return system_matrices, system_matrices_sym
 
 # need to check check_vin function
 def check_vin(vin,P,sig):
@@ -74,10 +209,18 @@ def read_reftraces():
     # read in reference traces
     ref_data = np.empty([q,v,samp])
     for i in range(q):
-        trace_data = np.genfromtxt(PATH_REF +'reftrace_'+ hex(i) + '.csv', delimiter=',')
+        try:
+            trace_data = np.genfromtxt(PATH_REF +'reftrace_'+ hex(i) + '.csv', delimiter=',')
+        except:
+            print("\nReference file \"reftrace_" + hex(i) + ".csv\" missing in \""+ PATH_REF +"\"\n")
+            sys.exit()
         ref_data[i] = trace_data.T
     # read in trace with random vinegar values for mean computation
-    trace_rand_data = np.genfromtxt(PATH_REF + '/randtrace.csv', delimiter=',')
+    try:
+        trace_rand_data = np.genfromtxt(PATH_REF + '/randtrace.csv', delimiter=',')
+    except:
+        print("\nRandom trace file \"randtrace.csv\" missing in \""+ PATH_REF +"\"\n")
+        sys.exit()
     trace_rand=trace_rand_data.T
     # compute mean of reference device (by using trace with random vinegar values)
     trace_rand_mean=np.mean(trace_rand[0:v-1,PoI_start:PoI_end],axis=0)
@@ -98,7 +241,11 @@ def get_vin_cand_from_trace(inputNr,ref_data,trace_rand_mean):
     ######################################
     # read trace from target device      #
     ######################################
-    target_data = np.genfromtxt(path+traces_v_name, delimiter=',')
+    try:
+        target_data = np.genfromtxt(path+traces_v_name, delimiter=',')
+    except:
+        print("Attack trace file \"meanTraces_" + str(inputNr) + ".csv\" missing in \""+ path +"\"\n")
+        sys.exit()
     tartrace = target_data.T
     # compute mean of target device (by using the traces from the real vin values, which is the only option we have for the target device) 
     tartrace_mean=np.mean(tartrace[0:v-1,PoI_start:PoI_end],axis=0)
@@ -245,8 +392,8 @@ def test_vin_cand(inputNr,indexint,indexsum,indexcomb):
         print('Found Oil vector for trace number',inputNr)
         return (P,oil) 
     if (len(diff)==0):
-        print('We are not able to determine the oil vector with this trace')
-        return 0
+        print('We are not able to determine the oil vector with this trace\n')
+        return (0,0)
 
     ######################################
     # check if there is exactly one miss #
@@ -260,8 +407,8 @@ def test_vin_cand(inputNr,indexint,indexsum,indexcomb):
                 return (P,oil) 
         guess[i] = K(ZZ(int(indexcomb[0,i])).digits(base=2))
     if (len(diff)==1):
-        print('We are not able to determine the oil vector with this trace')
-        return 0
+        print('We are not able to determine the oil vector with this trace\n')
+        return (0,0)
 
     ######################################
     # check if there are exactly two misses #
@@ -282,8 +429,8 @@ def test_vin_cand(inputNr,indexint,indexsum,indexcomb):
         guess[subsind[1]] = K(ZZ(int(indexcomb[0,subsind[1]])).digits(base=2))
         tries = tries + 1
     if (len(diff)==2):
-        print('We are not able to determine the oil vector with this trace')
-        return 0
+        print('We are not able to determine the oil vector with this trace\n')
+        return (0,0)
 
     tries = 0
     ######################################
@@ -307,8 +454,8 @@ def test_vin_cand(inputNr,indexint,indexsum,indexcomb):
         guess[subsind[2]] = K(ZZ(int(indexcomb[0,subsind[2]])).digits(base=2))
         tries = tries + 1
 
-    print('We are not able to determine the oil vector with this trace')
-    return 0
+    print('We are not able to determine the oil vector with this trace\n')
+    return (0,0)
     #print(guess)
 
 
@@ -328,6 +475,11 @@ def AppendIndependent(L, k, first_index):
     for i in range(l):
         aug_list[i][i + first_index]=1
     return aug_list
+
+# replace the beginning of the list of oil vectors by ones found using SCA 
+def ReplaceWithSCAoil(a_full,recoveredOil):
+	for i in range(len(recoveredOil)):
+		a_full[i]=recoveredOil[i]
 
 # insert the found lin relations into the vectors		
 def InsertLinEq(a_full,sol_full):
@@ -361,10 +513,12 @@ def Eval(F,x,y):
 
 def Evalleft(F,x):
 	return [ x*M for M in F]
+
 #############################################
 ##### Reconciliation attack #################
+
 # find the linear relations
-def InitialLinSystem(a_full, PublicKeySymm, w):
+def InitialLinSystem(a_full, PublicKeySymm, known):
 	R = PolynomialRing(K,'x', v, order='degrevlex')
 	systemM=[]
 	# linear equations
@@ -381,168 +535,68 @@ def InitialLinSystem(a_full, PublicKeySymm, w):
 	reversed_a_full=list([a_full[k][i] for i in range(m,n)])
 	reversed_a_full.reverse()
 	vector_vars=vector(reversed_a_full+list([a_full[k][w]]))
-	partial_sol=reducedAsmall*vector_vars-vector([x[i] for i in range(v-1,v-m-1,-1)]) # vector should be reversed
+	partial_sol=reducedAsmall*vector_vars-vector([x[i] for i in range(v-1,v-m-1,-1)]) 
 	full_sol=[x[i] for i in range(v-m)]+[partial_sol[i] for i in range(m-1,-1,-1)]
 	return full_sol, reducedAsmall, vector_vars
 
-# solve the system in the first iteration
-def SolveSystem0(system,  recoveredOil, length, reducedAsmall,vector_vars, known):
-	I=ideal(system)
-	gr=I.groebner_basis()
-	solution_full=[]
-	solution_split=[]
-	temp_recoveredOil = recoveredOil
-	if len(gr)==length:
-		solution=[x[i]-gr[i] for i in range(length)]
-		print("Oil vector found")
-		InsertFound(solution,vector_vars)
-		partial_sol=reducedAsmall*vector_vars-vector([x[i] for i in range(v-1,v-m-1,-1)])
-		solution_split = SplitInto_k(solution, c)
-		solution_full=AppendIndependent(solution_split, m, known)
-		full_sol=solution_full[0]+[partial_sol[i] for i in range(m-1,-1,-1)]
-		temp_recoveredOil += [full_sol]
-		print(full_sol)
-		solution_split[0] += [partial_sol[i] for i in range(m-1,-1,-1)]
-	else:
-		print("NO oil vectors found")
-		if len(gr)==1:
-			print("Needs randomization")
-		else:
-			print("Needs c+=1")
-	return solution_full,solution_split,temp_recoveredOil
-
+# form the system 
 def InitialSystem(a_full, PublicKey, PublicKeySymm, known):
-	# R = PolynomialRing(K,'x', c*v, order='invlex')
 	systemM=[]
 	system=[]
-	# systemLin=[]
 	# linear equations
 	for j in range(len(a_full)):
 		for k in range(max(known,j+1),len(a_full)):
-			# print(j,k)
 			systemM += Eval(PublicKeySymm,Matrix(R,1,n,a_full[j]), Matrix(R,1,n,a_full[k]))
-	# for j in range(len(systemM)):
-	# 	systemLin+=systemM[j][0]
-	# I=ideal(systemLin)
-	# gr=I.groebner_basis()
-	# print("gr linear")
-	# print(gr)
-	# R = PolynomialRing(K,'x', c*v, order='degrevlex'); 
 	# quadratic equations
 	for j in range(known,len(a_full)):
-		# print(j)
 		systemM += Eval(PublicKey,Matrix(R,1,n,a_full[j]), Matrix(R,1,n,a_full[j]))
 	for j in range(len(systemM)):
 		system+=systemM[j][0]
 	return system
 
+# solve the system 
+def SolveSystem(system, recoveredOil):
+    I=ideal(system)
+    gr=I.groebner_basis()
 
-def SolveSystem(system, recoveredOil,known):
-	I=ideal(system)
-	gr=I.groebner_basis()
-	print("Groebner Basis")
-	print(gr)
-	solution_full=[]
-	solution_split=[]
-	temp_recoveredOil = recoveredOil
-	if len(gr)==c*v:
-		solution=[x[i]-gr[i] for i in range(c*v)]
-		print(c,"additional oil vector found")
-		solution_split = SplitInto_k(solution, c)
-		solution_full=AppendIndependent(solution_split, m, known)
-		temp_recoveredOil += solution_full
-		#print(solution_full)
-	else:
-		print("No oil vectors found")
-		if len(gr)==1:
-			print("Needs randomization")
-		else:
-			print("Needs c+=1")
-	return solution_full,solution_split,temp_recoveredOil
+    solution_full=[]
+    solution_split=[]
+    temp_recoveredOil = recoveredOil
+    if len(gr)==v:
+        solution=[x[i]-gr[i] for i in range(v)]
 
+        solution_split = SplitInto_k(solution, 1)
+        solution_full=AppendIndependent(solution_split, m, w + found)
+        temp_recoveredOil += solution_full
 
-def reconciliation_attack(P,Oil,w):
-
-    # c=ceil(2*n/m-2)
-    # c=m # for full reconciliation in one round
-    R = PolynomialRing(K,'x', v, order='degrevlex'); 
-    x = list(R.gens())
-    found=0
-    a=SplitInto_k(x, c)
-    #K = GF(q)
-    #R = PolynomialRing(K,'x', c*v, order='degrevlex'); 
-    #x = R.gens()
-    if (w == 1):
-        solution_split=[[Oil[0,i] for i in range(m,n)]]
-        recoveredOil=[[Oil[0,i] for i in range(n)]]
-
-        a_aug = solution_split + a
-        a_full=AppendIndependent(a_aug, m, 0)
-        ReplaceWithSCAoil(a_full,recoveredOil)
-
-        sol_full, reducedAsmall, vector_vars = InitialLinSystem(a_full, [UpperToSymmetric(j) for j in P], w)
-        InsertLinEq(a_full,sol_full)
-        system = InitialSystem(a_full, P, [UpperToSymmetric(j) for j in P],w+found)
-        #R = PolynomialRing(K,'x', v-m, order='degrevlex'); 
-        solution_full,solution_split_found, recoveredOil = SolveSystem0(system,  recoveredOil,v-m, reducedAsmall,vector_vars,w+found)
-        solution_split += solution_split_found
-        found += len(solution_full)
-    
-    elif (w==2):
-        solution_split=[[Oil[0,i] for i in range(m,n)],[Oil[1,i] for i in range(m,n)]]
-        recoveredOil = [[Oil[0,i] for i in range(n)], [Oil[1,i] for i in range(n)]] ######### this is the list of input oil vectors from SCA
-
-    else: 
-        print('Input 1 or 2 oil vectors to start the reconciliation attack')
-
-    
-    print('Start the reconciliation attack with',w,'known oilvectors from the SCA')
-    #print("The known oil vector")
-    #print(oil)
-
-
-    while found < m-w:
-        print("Found ", found, "oil vectors")
-        print(" ")
-        a_aug = solution_split + a
-        a_full=AppendIndependent(a_aug, m, 0)
-        ReplaceWithSCAoil(a_full,recoveredOil)
-        # print("a_full")
-        # print(a_full)
-        # a_full should always be of the form except when SCA vectors are replaced
-        # [[1, 0, 0, a0, a1, a2, a3, a4], # known oil vector from previous round 
-        #  [0, 1, 0, x0, x1, x2, x3, x4], # unknown oil vectors
-        #  [0, 0, 1, x5, x6, x7, x8, x9]]
-        # where ai are known, and xi unknown
-        system = InitialSystem(a_full,  P, [UpperToSymmetric(j) for j in P] , w+found)
-        # print("system")
-        # print(system)
-        #R = PolynomialRing(K,'x', v, order='degrevlex'); 
-        solution_full,solution_split_found,recoveredOil = SolveSystem(system, recoveredOil, w+found)
-        solution_split += solution_split_found
-        found += len(solution_full)
-
-    #print("The recovered oil space is")
-    #print(recoveredOil)
-    return recoveredOil
-
-################ main ##############
+    else:
+        print("NO oil vectors found")
+        if len(gr)==1:
+            print("Needs randomization")
+        else:
+            print("Needs more vectors")
+    return solution_full,solution_split,temp_recoveredOil
 
 # check inputs #
 if(len(sys.argv) != 3):
-    print("\nplease select the path [0 = prepared, 1 = generated] and the number of available traces\npython DPA_Recon [0 | 1] [number of traces]\ne.g. python DPA_Recon.py 0 25\n")
+    print("\nPlease select the path [0 = prepared, 1 = generated] and the number of available traces\npython DPA_Recon [0 | 1] [number of traces]\ne.g. python DPA_Recon.py 0 25\n")
     sys.exit()
 else:
-    if int(sys.argv[1]) == 0:
-        PATH_ATTACK = "./prepared_attacktraces/"
-        PATH_REF = "./prepared_reftraces/"
-    elif int(sys.argv[1]) == 1:
-        PATH_ATTACK = "./gen_attacktraces/"
-        PATH_REF = "./gen_reftraces/"
-    else:
-        print("\nplease select the path [0 = prepared, 1 = generated] and the number of available traces\npython DPA_Recon [0 | 1] [number of traces]\ne.g. python DPA_Recon.py 0 25\n")
+    try:
+        if int(sys.argv[1]) == 0:
+            PATH_ATTACK = "./prepared_attacktraces/"
+            PATH_REF = "./prepared_reftraces/"
+        elif int(sys.argv[1]) == 1:
+            PATH_ATTACK = "./gen_attacktraces/"
+            PATH_REF = "./gen_reftraces/"
+        else:
+            print("\nPlease select the path to the traces [0 = prepared, 1 = generated] and the number of available attacktraces\npython DPA_Recon [0 | 1] [number of traces]\ne.g. python DPA_Recon.py 0 25\n")
+            sys.exit()
+        NUMBER_OF_TRACES = int(sys.argv[2])
+    except:
+        print("\nPlease select the path to the traces [0 = prepared, 1 = generated] and the number of available attacktraces\npython DPA_Recon [0 | 1] [number of traces]\ne.g. python DPA_Recon.py 0 25\n")
+
         sys.exit()
-    NUMBER_OF_TRACES = int(sys.argv[2])    
 
 # read in ref trace #
 print('Reading in reference traces')   
@@ -551,6 +605,7 @@ print('Done')
 
 # get oil vector from target trace #
 Oilspace = zero_matrix(K,NUMBER_OF_TRACES,n)
+oil_counter=0
 for inputNr in range(0,NUMBER_OF_TRACES):
     print('Reading in target traces and get candidates for vin')  
     (indexint,indexsum,indexcomb) = get_vin_cand_from_trace(inputNr,ref_data,trace_rand_mean)
@@ -558,25 +613,83 @@ for inputNr in range(0,NUMBER_OF_TRACES):
 
     print('Recover Oil Vector...')  
     (P,oil) = test_vin_cand(inputNr,indexint,indexsum,indexcomb)
-    print(oil)
-    # if (oil):
-    #     # start reconciliation attack, as soon as it is efficient enough to work with 1 vector
-    #     c = 1
-    #     w = 1
-    #     recoveredOil = reconciliation_attack(P,oil,w)
-    #     print(recoveredOil)
+    if (oil):
+        Oilspace[inputNr,:] = oil
+        oil_counter+=1
+        print(oil,'\n')
 
-    Oilspace[inputNr,:] = oil
+# check if oil vector available
+if oil_counter:
+    # start reconciliation attack with recovered oil vector(s) #
+    # read in number of traces to start with
+    bad_choice = True
+    while(bad_choice):
+        oil_choice = input("Please select which one of the " + str(oil_counter) + " recovered oil vector(s) [0,...," + str(oil_counter-1) + "] should be used for the next steps?\n > ")
+        try:
+            oil_choice = int(oil_choice)
+        except:
+            print("Please select only 1 integer value.") 
+            continue
+        if oil_choice<0 or oil_choice>oil_counter-1:
+            print("Please select a value in this range [0,...," + str(oil_counter-1) + "].")
+            continue
+        bad_choice=False
+    Oilspace = [Oilspace[oil_choice][i] for i in range(n)]
+    
+    R = PolynomialRing(K,'x', n, order='degrevlex');
+    sol_full = InitialLinSystemKS([Oilspace] + [list(R.gens())], [UpperToSymmetric(j) for j in P], list(R.gens()), fixed)
+    
+    var_change = LinearSystemToMatrix(sol_full,n-m-fixed,n)
+    
+    system = InitialSystemKS([sol_full], P)
+    
+    matrices, matrices_sym=PolynomialToMatrix(system,n-m-fixed)
 
-#print(Oilspace)
+    foundoil = FindOilKipnisShamir(m, matrices_sym)
+    Oilspace = [Oilspace] + [[foundoil[0][i] for i in range(n)]]    
 
-# right know it is only possible to start recon with 2 known oil vectors
-# start reconciliation attack with recovered oil vector(s) #
-c=1
-w=2
-recoveredOil = reconciliation_attack(P,Oilspace,2)
-print(recoveredOil)
+    w=2
+    
+    # start the reconciliation part
+    x = R.gens()
 
+    found=0
+    a=SplitInto_k([x[i] for i in range(v)], 1)
+
+    solution_split=[[Oilspace[0][i] for i in range(m,n)],[Oilspace[1][i] for i in range(m,n)]]
+
+
+    while found < m-w:
+
+        a_aug = solution_split + a
+
+        a_full=AppendIndependent(a_aug, m, 0)
+
+        ReplaceWithSCAoil(a_full,Oilspace)
+
+        system = InitialSystem(a_full, P, [UpperToSymmetric(j) for j in P],w+found)
+
+        solution_full,solution_split_found,Oilspace = SolveSystem(system, Oilspace)
+        solution_split += solution_split_found
+        
+        found += len(solution_full)
+
+
+    print('The following is a basis of the secret Oilspace.\nThis completes the key recovery.\n')
+    # Convert Oilspace entries from polynomial to integer representation for output
+    for i in range(w,m):
+
+        for j in range(m,n):
+            if not (Oilspace[i][j].coefficients()):
+                Oilspace[i][j] = 0
+            else:
+                Oilspace[i][j] = Oilspace[i][j].coefficients()[0]
+
+    for i in range(m):    
+        print(Oilspace[i])   
+
+else:
+    print("No recovered oil vector.\n")
 
 
 
