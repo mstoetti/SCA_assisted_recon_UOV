@@ -1,7 +1,7 @@
 # Separating Oil and Vinegar with a Single Trace
 
-This repository contains auxiliary material for the paper: **"Separating Oil and Vinegar with a Single Trace : 
-Side-Channel Assisted Reconciliation Attack on UOV"**.
+This repository contains auxiliary material for the paper: [Separating Oil and Vinegar with a Single Trace : 
+Side-Channel Assisted Reconciliation Attack on UOV"](https://eprint.iacr.org/2023/335).
 
 ## Overview
 This repository allows to run a single trace attack on UOV using the ChipWhisperer Setup with an STM32F3 Target Board. For the attack to be successful, we need 256 reference traces (possibly from a profiling device) and one attack trace (from the target device). The attached folders allow you to either generate the traces by yourself or to work this those we provide, in case you do not have the CW Setup at hand or just want to execute the attack quickly. Please consider the following folders:
