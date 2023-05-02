@@ -2,6 +2,13 @@
 
 This repository contains auxiliary material for the paper: ["Separating Oil and Vinegar with a Single Trace : Side-Channel Assisted Reconciliation Attack on UOV"](https://eprint.iacr.org/2023/335).
 
+Authors:
+- [Thomas Aulbach](https://www.uni-regensburg.de/informatics-data-science/qpc/team/thomas-aulbach/index.html)
+- [Fabio Campos](https://www.sopmac.org/)
+- [Juliane Krämer](https://www.uni-regensburg.de/informatics-data-science/qpc/team/prof-dr-juliane-kraemer/index.html)
+- [Simona Samardjiska](https://samardjiska.org)
+- [Marc Stöttinger](https://www.hs-rm.de/de/hochschule/person`<en/stoettinger-marc) 
+
 ## Overview
 This repository allows to run a single trace attack on UOV using the ChipWhisperer Setup with an STM32F3 Target Board. For the attack to be successful, we need 256 reference traces (possibly from a profiling device) and one attack trace (from the target device). The attached folders allow you to either generate the traces by yourself or to work this those we provide, in case you do not have the CW Setup at hand or just want to execute the attack quickly. Please consider the following folders:
 
