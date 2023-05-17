@@ -178,8 +178,10 @@ def main(argv):
             meanTraces.append(mean)
 
         meanTraces = np.array(meanTraces).T
-        meanPath = "meanTraces_" + str(j) + ".csv"
-        np.savetxt(meanPath, meanTraces, delimiter=',', comments="") 
+        # meanPath = "meanTraces_" + str(j) + ".csv"
+        meanPath = "meanTraces_" + str(j) + ".raw"
+        # np.savetxt(meanPath, meanTraces, delimiter=',', comments="") 
+        meanTraces.dump(meanPath)
         
     scope.dis()
     target.dis()

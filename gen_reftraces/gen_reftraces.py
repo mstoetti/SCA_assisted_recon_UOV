@@ -189,12 +189,15 @@ def main(argv):
 
 
         if(j == 256):
-            meanPath = "randtrace.csv"
+            # meanPath = "randtrace.csv"
+            meanPath = "randtrace.raw"
         else:
-            meanPath = "reftrace_" + hex(j) + ".csv"
+            # meanPath = "reftrace_" + hex(j) + ".csv"
+            meanPath = "reftrace_" + hex(j) + ".raw"
 
 
-        np.savetxt(meanPath, meanTraces, delimiter=',', comments="")
+        # np.savetxt(meanPath, meanTraces, delimiter=',', comments="")
+        meanTraces.dump(meanPath)
 
 
 
