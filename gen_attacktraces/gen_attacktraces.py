@@ -24,10 +24,18 @@ from datetime import datetime
 # define _HASH_LEN 32
 #------------------------
 
+### We reduce the parameter set of UOV, s.t. the part of the public key, which is relevant for our attack, fits on the STM32F3 board
+
+# number of vinegar variables
 _V1 = 42
+# number of oil variables = number of public key equations in UOV
 _O1 = 28
-N = (_V1 * _O1)/4
+# number of times the target function is called for each individual vinegar variable
+# pack of 4 coefficients of the public key equations are processed together 
 nMEAN = _O1/4
+# total number of times the target function is called during one signature generation
+N = (_V1 * _O1)/4
+
 
 SCOPETYPE = 'OPENADC'
 PLATFORM = 'CWLITEARM'
@@ -118,7 +126,7 @@ def main(argv):
 ###############################################################            
 
 
-
+    # LOOPS = number of attack traces you want to generate, given as input argument
     for j in range(0, LOOPS):
         # generate inputs with given seed
         os.chdir(PATH + "/x86/")

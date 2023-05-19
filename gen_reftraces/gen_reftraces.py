@@ -24,10 +24,17 @@ import random
 # define _HASH_LEN 32
 #------------------------
 
+### We reduce the parameter set of UOV, s.t. the part of the public key, which is relevant for our attack, fits on the STM32F3 board
+
+# number of vinegar variables
 _V1 = 42
+# number of oil variables = number of public key equations in UOV
 _O1 = 28
-N = (_V1 * _O1)/4
+# number of times the target function is called for each individual vinegar variable
+# pack of 4 coefficients of the public key equations are processed together 
 nMEAN = _O1/4
+# total number of times the target function is called during one signature generation
+N = (_V1 * _O1)/4
 
 SCOPETYPE = 'OPENADC'
 PLATFORM = 'CWLITEARM'
@@ -125,6 +132,8 @@ def main(argv):
 
     os.chdir(PATH)
 
+    # total number of reference traces is 257
+    # we have 256 for each field element and an additional reference trace using random entries for an 'average' trace
     LOOPS = 257
 
     for j in range(0, LOOPS):

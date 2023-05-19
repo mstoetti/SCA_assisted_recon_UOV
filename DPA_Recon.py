@@ -10,27 +10,41 @@ from sage.doctest.util import Timer
 from sage.misc.sage_timeit import SageTimeitResult
 
 
-# PoI and Parameter for F3 traces
+### PoI and Parameter for F3 traces
+### The folllowing parameter need to be fixed to cut out the region of interest of the conducted power measurements
+### This may vary for different platforms/boards and is tailored to the use of an STM32F3 board
+
+# first sample of interest
 PoI_start=58
+# last sample of interest
 PoI_end=1050
+# cycle length: each of the 8-bits of the target value is processed individually, the treatment of each bit takes 132 samples
 cycle=132
+# fine-tuning
 measure_offset=20
 measure_range=25
-v = 42
-m = 28
-n = m + v
 
+
+### We reduce the parameter set of UOV, s.t. the part of the public key, which is relevant for our attack, fits on the STM32F3 board (see Section 4 in paper)
+
+# number of vinegar variables
+v = 42
+# number of oil variables = number of public key equations in UOV
+m = 28
+# total number of variables
+n = m + v
 # samples per trace
 samp = 2000
-
 # field size q
 q = 256
 
+# constant needed for the KS attack
 fixed=3*m-n
 
 x = var('x')
 # K = GF(q, 'a', modulus= x**8 + x**4 + x**3 + x + 1, repr = 'int')
 
+# define the field that is used in UOV
 F = GF(2)['y']; (y,) = F._first_ngens(1)
 K = GF(q, 'z', modulus= y**8  + y**4 + y**3  + y + 1 , repr = 'int', proof=False, names=('z',)); (z,) = K._first_ngens(1)
 

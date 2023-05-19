@@ -115,52 +115,51 @@ def analyze_measures(M1,M2,F1,noise):
 	#print(np.round(c/nv,2))
 	return recv
 
-# number of trials
-x = y = 0
-z = 0
 n = 30	 
-std = 1.4
-print('number of HW measurements to recover one vinegar variable')
-print('m=',m)
-print('number of vinegar variables')
-print('v=',nv)
-print('chosen standard deviation')
-print('std=',std)
-
-acc = scipy.stats.norm(0, std/2).cdf(0.5) - scipy.stats.norm(0, std/2).cdf(-0.5)
-print('percentage of correctly measured Hamming weights')
-print('acc=',acc)
-for _ in range(n):
-	###		simulate measurements		###
-	M1 = np.full((m,nv,nv),0)
-	M2 = np.full((m,nv),0)
-	(M1,M2) = measure_one_sig(F1,v[0])
-	#print(M1[1,:,:])
-
-	# Run test, standard deviation of noise in last entry	
-	recv = analyze_measures(M1,M2,F1,std)	
-
-	#print('recovered vinegars')
-	#print(recv)	
-	#print('true vinegars')	
-	#print(v[0])	
-	x = x + np.count_nonzero(recv - v[0])
-	y = y + nv
-	#print('number of wrongly determined vinegar variables')
-	#print(np.count_nonzero(recv - v[0]), ' of ',nv)
-	if (np.count_nonzero(recv - v[0])):
-		z = z +1
-
-print('number of wrongly determined vinegar variables')
-print(x, ' of ',y)
-print('accuracy for one vinegar variable in %')
-print(100 - np.round(x/y,4)*100)
 
 
-print('number of wrongly determined vinegar vectors')
-print(z, ' of ',n)
-print('accuracy for one vinegar vector in %')
-print(100 - np.round(z/n,4)*100)
+print('\nSimulated parameter Set:')
+print('v=',nv , 'm=',m)
+print('In order to simulate other parameter sets, please uncomment the respective code line at the beginning of the script.')
+
+
+
+# define the deviation used for the simulation
+std = np.array([1 , 1.3 , 1.4])
+
+for i in range(len(std)):
+	# number of trials
+	x = y = 0
+	z = 0
+	print('\nPerform simulation with chosen standard deviation:','std=',std[i])
+	acc = scipy.stats.norm(0, std/2).cdf(0.5) - scipy.stats.norm(0, std/2).cdf(-0.5)
+	print('Percentage of correctly measured Hamming weights:','acc=',np.round(acc[i],3))
+	for _ in range(n):
+		###		simulate measurements		###
+		M1 = np.full((m,nv,nv),0)
+		M2 = np.full((m,nv),0)
+		(M1,M2) = measure_one_sig(F1,v[0])
+		#print(M1[1,:,:])
+
+		# Run test, standard deviation of noise in last entry	
+		recv = analyze_measures(M1,M2,F1,std[i])	
+
+		#print('recovered vinegars')
+		#print(recv)	
+		#print('true vinegars')	
+		#print(v[0])	
+		x = x + np.count_nonzero(recv - v[0])
+		y = y + nv
+		#print('number of wrongly determined vinegar variables')
+		#print(np.count_nonzero(recv - v[0]), ' of ',nv)
+		if (np.count_nonzero(recv - v[0])):
+			z = z +1
+
+	#print('\nnumber of wrongly determined vinegar variables:',x, ' of ',y)
+	print('Accuracy for one vinegar variable in %',100 - np.round(x/y,4)*100)
+	#print('\nnumber of wrongly determined vinegar vectors',z, ' of ',n)
+	print('Accuracy for one vinegar vector in %',100 - np.round(z/n,4)*100)
+
 
 
 
